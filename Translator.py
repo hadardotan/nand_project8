@@ -39,21 +39,19 @@ class Translator():
         translates vm line to asm lines
         """
         as_list = line.split(' ')
-        if as_list[0] == 'lable':
-            return self.lable_command(as_list[1])
-        if as_list[0] == 'goto':
-            return self.goto_command(as_list[1])
-        if as_list[0] == 'if-goto':
-            return self.if_goto_command(as_list[1])
-
-
-
-
-
+        command = as_list[0]
         if (len(as_list)) == 1:
-
+            if command == 'return':
+                return self.return_command()
             return self.aritmetics_commands(line.strip())
-        command, segment, i = as_list[0], as_list[1], as_list[2]
+        if command in ["goto","if-goto","label"]:
+            label = as_list[1]
+            return self.branching_command(command,label)
+        if command in ["function","call"]:
+            name = as_list[1]
+            n = as_list[2]
+            return self.functions_command(command,name,n)
+        segment, i =  as_list[1], as_list[2]
         if segment == 'this' or segment == 'that':
             return self.this_that_command(command,segment,i)
         if segment == 'constant':
@@ -66,6 +64,41 @@ class Translator():
             return self.pointer_command(command, i)
         if segment == 'static':
             return self.static_command(command, i)
+
+    def return_command(self):
+        return ""
+
+    def functions_command(self, command, name, n):
+        if command == 'function':
+            return self.function_command(name, n)
+        if command == 'call':
+            return self.call_command(name, n)
+        return ""
+
+    def branching_command(self, command, label):
+
+        if command == 'label':
+            return self.label_command(label)
+        if command == 'goto':
+            return self.goto_command(label)
+        if command == 'if-goto':
+            return self.if_goto_command(label)
+
+    def label_command(self, label):
+        return ""
+    
+    def goto_command(self, label):
+        return ""
+    
+    def if_goto_command(self, label):
+        return ""
+
+    def function_command(self, name, n):
+        return ""
+
+    def call_command(self, name, n):
+        return ""
+        
 
     def this_that_command(self, command , segment , i):
         """
