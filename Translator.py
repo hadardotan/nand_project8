@@ -85,20 +85,45 @@ class Translator():
             return self.if_goto_command(label)
 
     def label_command(self, label):
-        return ""
+        line = ["// label "+label]
+        line.append("("+label+")")
+        return Parser.line_lst_2_str(line)
     
     def goto_command(self, label):
-        return ""
+        line = ["// goto " + label]
+        line.append("@" + label)
+        line.append("0;JMP")
+        return Parser.line_lst_2_str(line)
     
     def if_goto_command(self, label):
-        return ""
+        line = ["// if-goto " + label]
+        line.append("@SP")
+        line.append("AM=M-1")
+        line.append("D=M")
+        line.append("A=A-1")
+        line.append("@" + label)
+        line.append("D;JNE")
+        return Parser.line_lst_2_str(line)
+
 
     def function_command(self, name, n):
-        return ""
+        line = ["// function " + name +" "+n]
+        line.append("(" + name+")")
+        for i in range(n):
+            line.append("@" + Local)
+            line.append("D=M")
+            line.append("@0")
+            line.append("A=D+A")
+            line.append("D=M")
+            line.append("@SP")
+            line.append("A=M")
+            line.append("M=D")
+            line.append("@SP")
+            line.append("M=M+1")
+        return Parser.line_lst_2_str(line)
 
     def call_command(self, name, n):
         return ""
-        
 
     def this_that_command(self, command , segment , i):
         """

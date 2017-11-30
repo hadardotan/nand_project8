@@ -31,5 +31,5 @@ def main(path):
 #     if len(sys.argv) == 2:
 #         main(sys.argv[1])
 
-example_path = r"C:\Users\mika\Desktop\nand2tetris\nand2tetris\projects\08\ProgramFlow\BasicLoop"
+example_path = r"C:\Users\mika\Desktop\nand2tetris\nand2tetris\projects\08\ProgramFlow\FibonacciSeries\FibonacciSeries.vm"
 main(example_path)
