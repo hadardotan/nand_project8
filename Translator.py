@@ -10,13 +10,16 @@ That = "THAT"
 Temp = "5"
 Static = "16"
 
+
 class Translator():
     """
     generates asm file from vm files
     """
 
     def __init__(self, files, output_path):
-        self.lables_counter = 0
+        self.labels_counter = 0
+        self.return_address_counter = 0
+        self.ram_num = 1
         self.vm_lines = []
         for path in files:
             self.vm_lines += Parser.path_to_lines(path)
@@ -122,8 +125,50 @@ class Translator():
             line.append("M=M+1")
         return Parser.line_lst_2_str(line)
 
+    def init_ram_num(self):
+        self.ram_num = 1
+
+    def get_current_ram(self):
+        current_ram = "R"+str(self.ram_num)
+        self.ram_num +=1
+        return current_ram
+
     def call_command(self, name, n):
-        return ""
+        self.init_ram_num()
+
+        line = ["// call "+name+" "+n]
+        return_address = "RETURN_ADDRESS" + str(self.return_address_counter)
+        #push return_address
+        line.append(self.constant_command(return_address))
+        #push LCL
+        line.append(self.local_argument_command("push",Local,
+                                                self.get_current_ram()))
+        #push ARG
+        line.append(self.local_argument_command("push",Argument,
+                                                self.get_current_ram()))
+        #push THIS
+        line.append(self.this_that_command("push",This,self.get_current_ram()))
+        #push THAT
+        line.append(self.this_that_command("push",That,self.get_current_ram()))
+
+        #ARG = SP-n-5
+        line.append("@SP")
+        line.append("D=M")
+        line.append("@"+str(n+5))
+        line.append("D=D-A")
+        line.append("@ARG")
+        line.append("M=D")
+
+        #LCL=SP
+        line.append("@SP")
+        line.append("D=M")
+        line.append("@LCL")
+        line.append("M=D")
+
+        line.append(self.goto_command(name))  #goto function_name
+        line.append("("+return_address+")")
+
+        return line
 
     def this_that_command(self, command , segment , i):
         """
@@ -348,15 +393,15 @@ class Translator():
         :return: string  of asm code for the vm command
         """
         line = ["// "+command]
-        true = command.upper() + str(self.lables_counter)
-        end = "END" + str(self.lables_counter)
+        true = command.upper() + str(self.labels_counter)
+        end = "END" + str(self.labels_counter)
         condition = "JEQ"
         if command == "gt":
             condition = "JGT"
         if command == "lt":
             condition = "JLT"
 
-        self.lables_counter +=1
+        self.labels_counter +=1
         line +=[
         '@SP',
         'M=M-1',
