@@ -68,8 +68,7 @@ class Translator():
         if segment == 'static':
             return self.static_command(command, i)
 
-    def return_command(self):
-        return ""
+
 
     def functions_command(self, command, name, n):
         if command == 'function':
@@ -133,13 +132,79 @@ class Translator():
         self.ram_num +=1
         return current_ram
 
+    def return_command(self):
+        """
+
+        :return:
+        """
+        line = ["// return " ]
+        #FRAME = LCL
+        line.append("@LCL")
+        line.append("D=M")
+        line.append("@R13")
+        line.append("M=D")
+
+        #RET = *(FRAME-5)
+        line.append("@R13")
+        line.append("D=M")
+        line.append("@5")
+        line.append("D=D-A")
+        line.append("A=D")
+        line.append("D=M")
+        line.append("@R14")
+        line.append("@R13")
+        line.append("M=D")
+
+        #*ARG=pop()
+        line.append(self.constant_command("pop"))
+        line.append("D=M")
+        line.append("@ARG")
+        line.append("A=M")
+        line.append("M=D")
+
+        #SP=ARG+1
+        line.append("@ARG")
+        line.append("D=M")
+        line.append("@SP")
+        line.append("M=D+1")
+
+        #THAT=*(FRAME-1) THIS=*(FRAME-2) ARG=*(FRAME-3) LCL=*(FRAME-4)
+        i=1
+        for segment in (["THAT", "THIS", "ARG", "LCL"]):
+            line.append("@R13")
+            line.append("D=M")
+            line.append("@"+str(i))
+            line.append("D=D-A")
+            line.append("A=D")
+            line.append("D=M")
+            line.append("@"+segment)
+            line.append("M=D")
+            i+=1
+
+        #goto RET
+        line.append("@R14")
+        line.append("A=M")
+        line.append("0; JMP")
+
+        return Parser.line_lst_2_str(line)
+
+
+
+        return ""
+
     def call_command(self, name, n):
+        """
+
+        :param name:
+        :param n:
+        :return:
+        """
         self.init_ram_num()
 
         line = ["// call "+name+" "+n]
-        return_address = "RETURN_ADDRESS" + str(self.return_address_counter)
+        ret = "RET" + str(self.return_address_counter)
         #push return_address
-        line.append(self.constant_command(return_address))
+        line.append(self.constant_command(ret))
         #push LCL
         line.append(self.local_argument_command("push",Local,
                                                 self.get_current_ram()))
@@ -166,9 +231,9 @@ class Translator():
         line.append("M=D")
 
         line.append(self.goto_command(name))  #goto function_name
-        line.append("("+return_address+")")
+        line.append("("+ret+")")
 
-        return line
+        return Parser.line_lst_2_str(line)
 
     def this_that_command(self, command , segment , i):
         """
