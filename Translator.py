@@ -188,10 +188,6 @@ class Translator():
 
         return Parser.line_lst_2_str(line)
 
-
-
-        return ""
-
     def call_command(self, name, n):
         """
 
@@ -202,6 +198,7 @@ class Translator():
         self.init_ram_num()
 
         line = ["// call "+name+" "+n]
+        line += ["@256","D=A","@SP","M=D"] #bootstrap
         ret = "RET" + str(self.return_address_counter)
         #push return_address
         line.append(self.constant_command(ret))
@@ -408,6 +405,7 @@ class Translator():
         :return: string  of asm code for the vm command
         """
         line = ["// " + command]
+
         if command == "neg":
             line.append("D=0")
             line.append("@SP")
@@ -459,6 +457,7 @@ class Translator():
         """
         line = ["// "+command]
         true = command.upper() + str(self.labels_counter)
+
         end = "END" + str(self.labels_counter)
         condition = "JEQ"
         if command == "gt":
@@ -495,3 +494,6 @@ class Translator():
         '@SP',
         'M=M+1']
         return Parser.line_lst_2_str(line)
+
+
+
