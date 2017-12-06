@@ -31,7 +31,5 @@ def main(path):
 #     if len(sys.argv) == 2:
 #         main(sys.argv[1])
 
-example_path =\
-    r"C:\nand\nand2tetris\projects\08\FunctionCalls\SimpleFunction\
-    SimpleFunction.vm"
+example_path = r"C:\nand\nand2tetris\projects\08\FunctionCalls\SimpleFunction\SimpleFunction.vm"
 main(example_path)
