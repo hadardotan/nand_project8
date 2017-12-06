@@ -15,7 +15,6 @@ class Translator():
     """
     generates asm file from vm files
     """
-
     def __init__(self, files, output_path):
         self.labels_counter = 0
         self.return_address_counter = 0
@@ -24,7 +23,6 @@ class Translator():
         for path in files:
             self.vm_lines += Parser.path_to_lines(path)
         self.output_path = output_path
-
 
     def translate(self):
         """
@@ -41,7 +39,7 @@ class Translator():
         """
         translates vm line to asm lines
         """
-        as_list = line.split(' ')
+        as_list = line.strip().split(' ')
         command = as_list[0]
         if (len(as_list)) == 1:
             if command == 'return':
@@ -68,17 +66,13 @@ class Translator():
         if segment == 'static':
             return self.static_command(command, i)
 
-
-
     def functions_command(self, command, name, n):
         if command == 'function':
             return self.function_command(name, n)
         if command == 'call':
             return self.call_command(name, n)
-        return ""
 
     def branching_command(self, command, label):
-
         if command == 'label':
             return self.label_command(label)
         if command == 'goto':
@@ -107,21 +101,16 @@ class Translator():
         line.append("D;JNE")
         return Parser.line_lst_2_str(line)
 
-
     def function_command(self, name, n):
         line = ["// function " + name +" "+n]
         line.append("(" + name+")")
-        for i in range(n):
-            line.append("@" + Local)
-            line.append("D=M")
-            line.append("@0")
-            line.append("A=D+A")
-            line.append("D=M")
+        for i in range(int(n)):
             line.append("@SP")
             line.append("A=M")
             line.append("M=D")
-            line.append("@SP")
+            line.append("@0")
             line.append("M=M+1")
+
         return Parser.line_lst_2_str(line)
 
     def init_ram_num(self):
@@ -134,7 +123,6 @@ class Translator():
 
     def return_command(self):
         """
-
         :return:
         """
         line = ["// return " ]
@@ -149,14 +137,18 @@ class Translator():
         line.append("D=M")
         line.append("@5")
         line.append("D=D-A")
-        line.append("A=D")
+        line.append("A=D")   ##
         line.append("D=M")
         line.append("@R14")
-        line.append("@R13")
         line.append("M=D")
 
         #*ARG=pop()
-        line.append(self.constant_command("pop"))
+        #line.append(self.constant_command("pop"))
+
+        line.append("@SP")
+        line.append("M=M-1")
+        line.append("A=M")
+        ### $$$
         line.append("D=M")
         line.append("@ARG")
         line.append("A=M")
@@ -184,42 +176,86 @@ class Translator():
         #goto RET
         line.append("@R14")
         line.append("A=M")
-        line.append("0; JMP")
-
+        line.append("0;JMP")
         return Parser.line_lst_2_str(line)
-
-
-
-        return ""
 
     def call_command(self, name, n):
         """
-
         :param name:
         :param n:
         :return:
         """
         self.init_ram_num()
+        line = ["// call " + name + " " + n]
 
-        line = ["// call "+name+" "+n]
+        line += ["@256","D=A","@SP","M=D"]  ##################################### boot
+
+        # push return_address:
+        # line.append(self.constant_command(ret))
         ret = "RET" + str(self.return_address_counter)
-        #push return_address
-        line.append(self.constant_command(ret))
-        #push LCL
-        line.append(self.local_argument_command("push",Local,
-                                                self.get_current_ram()))
+        line += ["// 1 save return_address:"]
+        line.append("@" + ret)
+        line.append("D=A")
+        line.append("@SP")
+        line.append("A=M")
+        line.append("M=D")
+        line.append("@SP")
+        line.append("M=M+1")     # RAM[SP] = ret0
+
+        # push LCL
+        # line.append(self.local_argument_command("push",Local,self.get_current_ram()))
+        line += ["// 2 save LCL:"]
+        line.append("@" + self.ram_for_segment('local'))
+        line.append("D=M")
+
+        line.append("@SP")
+        line.append("A=M")
+        line.append("M=D")
+        line.append("@SP")
+        line.append("M=M+1")      # RAM[SP] = RAM[R1]
+
+
         #push ARG
-        line.append(self.local_argument_command("push",Argument,
-                                                self.get_current_ram()))
+        #line.append(self.local_argument_command("push",Argument,self.get_current_ram()))
+        line += ["// 3 save ARG:"]
+        line.append("@" + self.ram_for_segment('argument'))
+        line.append("D=M")
+        line.append("@SP")
+        line.append("A=M")
+        line.append("M=D")
+        line.append("@SP")
+        line.append("M=M+1")
+
+
         #push THIS
-        line.append(self.this_that_command("push",This,self.get_current_ram()))
+        #line.append(self.this_that_command("push",This,self.get_current_ram()))
+        line += ["// 4 save THIS:"]
+        line.append("@" + self.ram_for_segment('this'))
+        line.append("D=M")
+        line.append("@SP")
+        line.append("A=M")
+        line.append("M=D")
+        line.append("@SP")
+        line.append("M=M+1")
+
+
+
         #push THAT
-        line.append(self.this_that_command("push",That,self.get_current_ram()))
+        #line.append(self.this_that_command("push",That,self.get_current_ram()))
+        line += ["// 5 save THAT:"]
+        line.append("@" + self.ram_for_segment('that'))
+        line.append("D=M")
+        line.append("@SP")
+        line.append("A=M")
+        line.append("M=D")
+        line.append("@SP")
+        line.append("M=M+1")
+
 
         #ARG = SP-n-5
         line.append("@SP")
         line.append("D=M")
-        line.append("@"+str(n+5))
+        line.append("@"+str(int(n)+5))
         line.append("D=D-A")
         line.append("@ARG")
         line.append("M=D")
@@ -230,9 +266,11 @@ class Translator():
         line.append("@LCL")
         line.append("M=D")
 
-        line.append(self.goto_command(name))  #goto function_name
+        #line.append(self.goto_command(name))  #goto function_name
+        line.append("@"+name)
+        line.append("0;JMP")
+        ##
         line.append("("+ret+")")
-
         return Parser.line_lst_2_str(line)
 
     def this_that_command(self, command , segment , i):
